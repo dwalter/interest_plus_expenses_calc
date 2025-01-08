@@ -110,7 +110,7 @@
                 tableHtml += `
                     <tr>
                         <td>${row.month}</td>
-                        <td>${row.balance.toFixed(2)}</td>
+                        <td>$${row.balance.toFixed(2)}</td>
                         <td>${((row.balance / principal) * 100).toFixed(1)}%</td>
                     </tr>
                 `;
@@ -154,7 +154,7 @@
             
             // Create chart
             const svg = document.getElementById('chart');
-            const margin = {top: 20, right: 20, bottom: 30, left: 60};
+            const margin = {top: 20, right: 20, bottom: 30, left: 80};  // Increased left margin
             const width = svg.clientWidth - margin.left - margin.right;
             const height = 400 - margin.top - margin.bottom;
             
@@ -168,10 +168,12 @@
             g.setAttribute('transform', `translate(${margin.left},${margin.top})`);
             svg.appendChild(g);
             
-            // Scales
+            // Scales with predefined min and max
+            const minBalance = Math.min(...data.map(d => d.balance));
+            const maxBalance = Math.max(...data.map(d => d.balance));
             const xScale = value => (width * value) / months;
-            const yScale = value => height - (height * (value - Math.min(...data.map(d => d.balance)))) / (Math.max(...data.map(d => d.balance)) - Math.min(...data.map(d => d.balance)));
-            
+            const yScale = value => height * (1 - (value - minBalance) / (maxBalance - minBalance));
+
             // Create line
             let pathD = `M ${xScale(data[0].month)} ${yScale(data[0].balance)}`;
             for (let i = 1; i < data.length; i++) {
@@ -183,7 +185,7 @@
             path.setAttribute('class', 'chart-line');
             g.appendChild(path);
             
-            // Add axes
+            // Add x-axis
             const xAxis = document.createElementNS("http://www.w3.org/2000/svg", "g");
             xAxis.setAttribute('transform', `translate(0,${height})`);
             for (let i = 0; i <= months; i += Math.ceil(months/10)) {
@@ -196,13 +198,12 @@
             }
             g.appendChild(xAxis);
             
+            // Add y-axis with 6 evenly spaced ticks
             const yAxis = document.createElementNS("http://www.w3.org/2000/svg", "g");
-            const yValues = [Math.min(...data.map(d => d.balance)), ...Array(4).fill().map((_, i) => {
-                const range = Math.max(...data.map(d => d.balance)) - Math.min(...data.map(d => d.balance));
-                return Math.min(...data.map(d => d.balance)) + (range * (i + 1) / 5);
-            })];
+            const numYTicks = 5;
             
-            yValues.forEach(value => {
+            for (let i = 0; i <= numYTicks; i++) {
+                const value = minBalance + ((maxBalance - minBalance) * i / numYTicks);
                 const tick = document.createElementNS("http://www.w3.org/2000/svg", "text");
                 tick.setAttribute('x', -10);
                 tick.setAttribute('y', yScale(value));
@@ -210,7 +211,7 @@
                 tick.setAttribute('dominant-baseline', 'middle');
                 tick.textContent = '$' + Math.round(value).toLocaleString();
                 yAxis.appendChild(tick);
-            });
+            }
             g.appendChild(yAxis);
         }
         
