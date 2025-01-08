@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Compound Interest Calculator with Monthly Expenses</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: inline-block;
+            width: 200px;
+        }
+        table {
+            border-collapse: collapse;
+            margin-top: 20px;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: right;
+        }
+        th {
+            background-color: #f5f5f5;
+        }
+        #chart {
+            margin-top: 20px;
+            width: 100%;
+            height: 400px;
+        }
+        .chart-bar {
+            fill: steelblue;
+        }
+        .chart-line {
+            fill: none;
+            stroke: steelblue;
+            stroke-width: 2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Compound Interest Calculator with Monthly Expenses</h1>
+    
+    <div class="input-group">
+        <label for="principal">Initial Principal ($):</label>
+        <input type="number" id="principal" value="100000">
+    </div>
+    
+    <div class="input-group">
+        <label for="rate">Annual Interest Rate (%):</label>
+        <input type="number" id="rate" value="5" step="0.1">
+    </div>
+    
+    <div class="input-group">
+        <label for="expenses">Monthly Expenses ($):</label>
+        <input type="number" id="expenses" value="1000">
+    </div>
+    
+    <div class="input-group">
+        <label for="months">Number of Months:</label>
+        <input type="number" id="months" value="12" min="1">
+    </div>
+    
+    <button onclick="calculate()">Calculate</button>
+    
+    <div id="tableContainer"></div>
+    <div id="monthsRemaining" style="margin: 20px 0; font-weight: bold;"></div>
+    <svg id="chart"></svg>
+
+    <script>
+        function calculate() {
+            const principal = parseFloat(document.getElementById('principal').value);
+            const annualRate = parseFloat(document.getElementById('rate').value) / 100;
+            const monthlyRate = annualRate / 12;
+            const monthlyExpenses = parseFloat(document.getElementById('expenses').value);
+            const months = parseInt(document.getElementById('months').value);
+            
+            let data = [];
+            let balance = principal;
+            
+            for (let i = 0; i <= months; i++) {
+                data.push({
+                    month: i,
+                    balance: balance
+                });
+                
+                if (i < months) {
+                    // Apply monthly interest and subtract expenses
+                    balance = balance * (1 + monthlyRate) - monthlyExpenses;
+                }
+            }
+            
+            // Create table
+            let tableHtml = `
+                <table>
+                    <tr>
+                        <th>Month</th>
+                        <th>Balance</th>
+                        <th>% of Initial Principal</th>
+                    </tr>
+            `;
+            
+            data.forEach(row => {
+                tableHtml += `
+                    <tr>
+                        <td>${row.month}</td>
+                        <td>${row.balance.toFixed(2)}</td>
+                        <td>${((row.balance / principal) * 100).toFixed(1)}%</td>
+                    </tr>
+                `;
+            });
+            
+            tableHtml += '</table>';
+            document.getElementById('tableContainer').innerHTML = tableHtml;
+
+            // Calculate months until depletion with extended calculation if needed
+            let monthsUntilDepleted = data.findIndex(row => row.balance <= 0);
+            let monthsText = '';
+            
+            if (monthsUntilDepleted === -1) {
+                // If not found in initial period, calculate until we find it
+                let extendedBalance = data[data.length - 1].balance;
+                let totalMonths = months;
+                
+                // If balance is decreasing, keep calculating until we find depletion
+                if (data[data.length - 1].balance < data[0].balance) {
+                    while (extendedBalance > 0 && totalMonths < 1200) { // Set a reasonable upper limit
+                        extendedBalance = extendedBalance * (1 + monthlyRate) - monthlyExpenses;
+                        totalMonths++;
+                        
+                        if (extendedBalance <= 0) {
+                            const years = (totalMonths / 12).toFixed(1);
+                            monthsText = `Total months until depletion: ${totalMonths} (${years} years)`;
+                            break;
+                        }
+                    }
+                    if (totalMonths >= 1200) {
+                        monthsText = `Principal will last more than 100 years`;
+                    }
+                } else {
+                    monthsText = `Principal is growing! Will not be depleted`;
+                }
+            } else {
+                const years = (monthsUntilDepleted / 12).toFixed(1);
+                monthsText = `Total months until depletion: ${monthsUntilDepleted} (${years} years)`;
+            }
+            document.getElementById('monthsRemaining').textContent = monthsText;
+            
+            // Create chart
+            const svg = document.getElementById('chart');
+            const margin = {top: 20, right: 20, bottom: 30, left: 60};
+            const width = svg.clientWidth - margin.left - margin.right;
+            const height = 400 - margin.top - margin.bottom;
+            
+            // Clear previous content
+            svg.innerHTML = '';
+            
+            // Set viewBox for responsiveness
+            svg.setAttribute('viewBox', `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`);
+            
+            const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            g.setAttribute('transform', `translate(${margin.left},${margin.top})`);
+            svg.appendChild(g);
+            
+            // Scales
+            const xScale = value => (width * value) / months;
+            const yScale = value => height - (height * (value - Math.min(...data.map(d => d.balance)))) / (Math.max(...data.map(d => d.balance)) - Math.min(...data.map(d => d.balance)));
+            
+            // Create line
+            let pathD = `M ${xScale(data[0].month)} ${yScale(data[0].balance)}`;
+            for (let i = 1; i < data.length; i++) {
+                pathD += ` L ${xScale(data[i].month)} ${yScale(data[i].balance)}`;
+            }
+            
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute('d', pathD);
+            path.setAttribute('class', 'chart-line');
+            g.appendChild(path);
+            
+            // Add axes
+            const xAxis = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            xAxis.setAttribute('transform', `translate(0,${height})`);
+            for (let i = 0; i <= months; i += Math.ceil(months/10)) {
+                const tick = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                tick.setAttribute('x', xScale(i));
+                tick.setAttribute('y', 20);
+                tick.setAttribute('text-anchor', 'middle');
+                tick.textContent = i;
+                xAxis.appendChild(tick);
+            }
+            g.appendChild(xAxis);
+            
+            const yAxis = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            const yValues = [Math.min(...data.map(d => d.balance)), ...Array(4).fill().map((_, i) => {
+                const range = Math.max(...data.map(d => d.balance)) - Math.min(...data.map(d => d.balance));
+                return Math.min(...data.map(d => d.balance)) + (range * (i + 1) / 5);
+            })];
+            
+            yValues.forEach(value => {
+                const tick = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                tick.setAttribute('x', -10);
+                tick.setAttribute('y', yScale(value));
+                tick.setAttribute('text-anchor', 'end');
+                tick.setAttribute('dominant-baseline', 'middle');
+                tick.textContent = '$' + Math.round(value).toLocaleString();
+                yAxis.appendChild(tick);
+            });
+            g.appendChild(yAxis);
+        }
+        
+        // Initial calculation
+        calculate();
+    </script>
+</body>
+</html>
