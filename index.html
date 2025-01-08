@@ -169,6 +169,7 @@
             const statusHtml = `
                 <div>${monthsText}</div>
                 <div style="margin-top: 10px;">Monthly expenses to break-even: $${breakEvenExpense} (Interest earned per month at current rate)</div>
+                <div style="margin-top: 10px;">Monthly earnings to break-even: $${(monthlyExpenses - monthlyInterest).toFixed(2)} (Amount needed to offset expenses minus interest)</div>
                 <div style="margin-top: 10px;">Required APY to break-even with current expenses: ${requiredAnnualRate.toFixed(2)}%</div>
             `;
             
