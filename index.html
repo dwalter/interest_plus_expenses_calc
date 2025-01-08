@@ -150,7 +150,13 @@
                 const years = (monthsUntilDepleted / 12).toFixed(1);
                 monthsText = `Total months until depletion: ${monthsUntilDepleted} (${years} years)`;
             }
-            document.getElementById('monthsRemaining').textContent = monthsText;
+            // Calculate break-even monthly expenses (where interest equals expenses)
+            const monthlyInterest = principal * monthlyRate;
+            const breakEvenExpense = monthlyInterest.toFixed(2);
+            
+            document.getElementById('monthsRemaining').innerHTML = 
+                `<div>${monthsText}</div>
+                 <div style="margin-top: 10px;">Monthly expenses to break-even: ${breakEvenExpense} (Interest earned per month at current rate)</div>`;
             
             // Create chart
             const svg = document.getElementById('chart');
