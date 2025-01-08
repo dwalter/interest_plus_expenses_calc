@@ -34,9 +34,6 @@
             width: 100%;
             height: 400px;
         }
-        .chart-bar {
-            fill: steelblue;
-        }
         .chart-line {
             fill: none;
             stroke: steelblue;
@@ -54,12 +51,12 @@
     
     <div class="input-group">
         <label for="rate">Annual Interest Rate (%):</label>
-        <input type="number" id="rate" value="5" step="0.1">
+        <input type="number" id="rate" value="8" step="0.1">
     </div>
     
     <div class="input-group">
         <label for="expenses">Monthly Expenses ($):</label>
-        <input type="number" id="expenses" value="1000">
+        <input type="number" id="expenses" value="1500">
     </div>
     
     <div class="input-group">
@@ -85,24 +82,34 @@
             let balance = principal;
             
             for (let i = 0; i <= months; i++) {
-                data.push({
-                    month: i,
-                    balance: balance
-                });
-                
-                if (i < months) {
-                    // Apply monthly interest and subtract expenses
-                    balance = balance * (1 + monthlyRate) - monthlyExpenses;
+                if (i === 0) {
+                    data.push({
+                        month: i,
+                        balance: balance,
+                        change: 0
+                    });
+                } else {
+                    const interestEarned = balance * monthlyRate;
+                    const newBalance = balance + interestEarned - monthlyExpenses;
+                    const change = newBalance - balance;
+                    
+                    data.push({
+                        month: i,
+                        balance: newBalance,
+                        change: change
+                    });
+                    
+                    balance = newBalance;
                 }
             }
             
-            // Create table
             let tableHtml = `
                 <table>
                     <tr>
                         <th>Month</th>
                         <th>Balance</th>
                         <th>% of Initial Principal</th>
+                        <th>$ Change</th>
                     </tr>
             `;
             
@@ -112,6 +119,7 @@
                         <td>${row.month}</td>
                         <td>$${row.balance.toFixed(2)}</td>
                         <td>${((row.balance / principal) * 100).toFixed(1)}%</td>
+                        <td>${row.change === 0 ? '-' : (row.change > 0 ? '+' : '-') + '$' + Math.abs(row.change).toFixed(2)}</td>
                     </tr>
                 `;
             });
@@ -119,18 +127,15 @@
             tableHtml += '</table>';
             document.getElementById('tableContainer').innerHTML = tableHtml;
 
-            // Calculate months until depletion with extended calculation if needed
             let monthsUntilDepleted = data.findIndex(row => row.balance <= 0);
             let monthsText = '';
             
             if (monthsUntilDepleted === -1) {
-                // If not found in initial period, calculate until we find it
                 let extendedBalance = data[data.length - 1].balance;
                 let totalMonths = months;
                 
-                // If balance is decreasing, keep calculating until we find depletion
                 if (data[data.length - 1].balance < data[0].balance) {
-                    while (extendedBalance > 0 && totalMonths < 1200) { // Set a reasonable upper limit
+                    while (extendedBalance > 0 && totalMonths < 1200) {
                         extendedBalance = extendedBalance * (1 + monthlyRate) - monthlyExpenses;
                         totalMonths++;
                         
@@ -151,14 +156,10 @@
                 monthsText = `Total months until depletion: ${monthsUntilDepleted} (${years} years)`;
             }
 
-            // Calculate break-even monthly expenses (where interest equals expenses)
             const monthlyInterest = principal * monthlyRate;
             const breakEvenExpense = monthlyInterest.toFixed(2);
-            
-            // Calculate required APY to break even with current expenses
             const requiredAnnualRate = (monthlyExpenses * 12 / principal) * 100;
             
-            // Build the complete status text
             const statusHtml = `
                 <div>${monthsText}</div>
                 <div style="margin-top: 10px;">Monthly expenses to break-even: $${breakEvenExpense} (Interest earned per month at current rate)</div>
@@ -167,29 +168,23 @@
             
             document.getElementById('monthsRemaining').innerHTML = statusHtml;
             
-            // Create chart
             const svg = document.getElementById('chart');
-            const margin = {top: 20, right: 20, bottom: 30, left: 80};  // Increased left margin
+            const margin = {top: 20, right: 20, bottom: 30, left: 80};
             const width = svg.clientWidth - margin.left - margin.right;
             const height = 400 - margin.top - margin.bottom;
             
-            // Clear previous content
             svg.innerHTML = '';
-            
-            // Set viewBox for responsiveness
             svg.setAttribute('viewBox', `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`);
             
             const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
             g.setAttribute('transform', `translate(${margin.left},${margin.top})`);
             svg.appendChild(g);
             
-            // Scales with predefined min and max
             const minBalance = Math.min(...data.map(d => d.balance));
             const maxBalance = Math.max(...data.map(d => d.balance));
             const xScale = value => (width * value) / months;
             const yScale = value => height * (1 - (value - minBalance) / (maxBalance - minBalance));
 
-            // Create line
             let pathD = `M ${xScale(data[0].month)} ${yScale(data[0].balance)}`;
             for (let i = 1; i < data.length; i++) {
                 pathD += ` L ${xScale(data[i].month)} ${yScale(data[i].balance)}`;
@@ -200,7 +195,6 @@
             path.setAttribute('class', 'chart-line');
             g.appendChild(path);
             
-            // Add x-axis
             const xAxis = document.createElementNS("http://www.w3.org/2000/svg", "g");
             xAxis.setAttribute('transform', `translate(0,${height})`);
             for (let i = 0; i <= months; i += Math.ceil(months/10)) {
@@ -213,7 +207,6 @@
             }
             g.appendChild(xAxis);
             
-            // Add y-axis with 6 evenly spaced ticks
             const yAxis = document.createElementNS("http://www.w3.org/2000/svg", "g");
             const numYTicks = 5;
             
@@ -230,7 +223,6 @@
             g.appendChild(yAxis);
         }
         
-        // Initial calculation
         calculate();
     </script>
 </body>
