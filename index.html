@@ -150,13 +150,22 @@
                 const years = (monthsUntilDepleted / 12).toFixed(1);
                 monthsText = `Total months until depletion: ${monthsUntilDepleted} (${years} years)`;
             }
+
             // Calculate break-even monthly expenses (where interest equals expenses)
             const monthlyInterest = principal * monthlyRate;
             const breakEvenExpense = monthlyInterest.toFixed(2);
             
-            document.getElementById('monthsRemaining').innerHTML = 
-                `<div>${monthsText}</div>
-                 <div style="margin-top: 10px;">Monthly expenses to break-even: ${breakEvenExpense} (Interest earned per month at current rate)</div>`;
+            // Calculate required APY to break even with current expenses
+            const requiredAnnualRate = (monthlyExpenses * 12 / principal) * 100;
+            
+            // Build the complete status text
+            const statusHtml = `
+                <div>${monthsText}</div>
+                <div style="margin-top: 10px;">Monthly expenses to break-even: $${breakEvenExpense} (Interest earned per month at current rate)</div>
+                <div style="margin-top: 10px;">Required APY to break-even with current expenses: ${requiredAnnualRate.toFixed(2)}%</div>
+            `;
+            
+            document.getElementById('monthsRemaining').innerHTML = statusHtml;
             
             // Create chart
             const svg = document.getElementById('chart');
