@@ -58,6 +58,11 @@
         <label for="expenses">Monthly Expenses ($):</label>
         <input type="number" id="expenses" value="1500">
     </div>
+
+    <div class="input-group">
+        <label for="earnings">Monthly Earnings ($):</label>
+        <input type="number" id="earnings" value="0">
+    </div>
     
     <div class="input-group">
         <label for="months">Number of Months:</label>
@@ -76,6 +81,7 @@
             const annualRate = parseFloat(document.getElementById('rate').value) / 100;
             const monthlyRate = annualRate / 12;
             const monthlyExpenses = parseFloat(document.getElementById('expenses').value);
+            const monthlyEarnings = parseFloat(document.getElementById('earnings').value);
             const months = parseInt(document.getElementById('months').value);
             
             let data = [];
@@ -90,7 +96,7 @@
                     });
                 } else {
                     const interestEarned = balance * monthlyRate;
-                    const newBalance = balance + interestEarned - monthlyExpenses;
+                    const newBalance = balance + interestEarned - monthlyExpenses + monthlyEarnings;
                     const change = newBalance - balance;
                     
                     data.push({
@@ -136,7 +142,7 @@
                 
                 if (data[data.length - 1].balance < data[0].balance) {
                     while (extendedBalance > 0 && totalMonths < 1200) {
-                        extendedBalance = extendedBalance * (1 + monthlyRate) - monthlyExpenses;
+                        extendedBalance = extendedBalance * (1 + monthlyRate) - monthlyExpenses + monthlyEarnings;
                         totalMonths++;
                         
                         if (extendedBalance <= 0) {
