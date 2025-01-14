@@ -169,7 +169,7 @@
                 } else {
                     const interestEarned = balance * monthlyRate;
                     const debtInterest = debt * debtMonthlyRate;
-                    const monthlyNetCashFlow = monthlyEarnings - monthlyExpenses;
+                    const monthlyNetCashFlow = monthlyEarnings - monthlyExpenses - monthlyDebtPayment;
 
                     const newBalance = balance + interestEarned + monthlyNetCashFlow;
                     const newDebt = Math.max(0, debt + debtInterest - monthlyDebtPayment);
