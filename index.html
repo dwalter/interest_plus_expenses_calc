@@ -74,23 +74,23 @@
 </head>
 <body>
     <h1>Compound Interest Calculator with Monthly Expenses</h1>
-    
+
     <div class="input-group">
         <label for="principal">Initial Principal ($):</label>
         <input type="number" id="principal" value="100000">
     </div>
-    
+
     <div class="input-group">
         <label for="rate">Annual Interest Rate (%):</label>
         <input type="number" id="rate" value="8" step="0.1">
     </div>
-    
+
     <!-- New debt inputs -->
     <div class="input-group">
         <label for="debt">Initial Debt ($):</label>
         <input type="number" id="debt" value="10000">
     </div>
-    
+
     <div class="input-group">
         <label for="debtRate">Debt Interest Rate (%):</label>
         <input type="number" id="debtRate" value="15" step="0.1">
@@ -100,7 +100,7 @@
         <label for="debtPayment">Monthly Debt Payment ($):</label>
         <input type="number" id="debtPayment" value="1000">
     </div>
-    
+
     <div class="input-group">
         <label for="expenses">Monthly Expenses ($):</label>
         <input type="number" id="expenses" value="1500">
@@ -110,17 +110,17 @@
         <label for="earnings">Monthly Earnings ($):</label>
         <input type="number" id="earnings" value="0">
     </div>
-    
+
     <div class="input-group">
         <label for="months">Number of Months:</label>
         <input type="number" id="months" value="12" min="1">
     </div>
-    
+
     <button onclick="calculate()">Calculate</button>
-    
+
     <div id="tableContainer"></div>
     <div id="monthsRemaining" style="margin: 20px 0; font-weight: bold;"></div>
-    
+
     <div class="legend">
         <div class="legend-item">
             <div class="legend-line legend-asset"></div>
@@ -135,7 +135,7 @@
             <div>$ net-total</div>
         </div>
     </div>
-    
+
     <svg id="chart"></svg>
 
     <script>
@@ -150,11 +150,11 @@
             const monthlyExpenses = parseFloat(document.getElementById('expenses').value);
             const monthlyEarnings = parseFloat(document.getElementById('earnings').value);
             const months = parseInt(document.getElementById('months').value);
-            
+
             let data = [];
             let balance = principal;
             let debt = initialDebt;
-            
+
             for (let i = 0; i <= months; i++) {
                 if (i === 0) {
                     data.push({
@@ -175,8 +175,8 @@
                     const newDebt = Math.max(0, debt + debtInterest - monthlyDebtPayment);
                     const newNetWorth = newBalance - newDebt;
 
-                    const change = (newBalance - balance) - (newDebt - debt);
-                    
+                    const change = (newBalance - balance) + (newDebt - debt);
+
                     data.push({
                         month: i,
                         balance: newBalance,
@@ -186,12 +186,12 @@
                         interestEarned: interestEarned,
                         debtInterest: debtInterest
                     });
-                    
+
                     balance = newBalance;
                     debt = newDebt;
                 }
             }
-            
+
             let tableHtml = `
                 <table>
                     <tr>
@@ -204,7 +204,7 @@
                         <th>Net Change</th>
                     </tr>
             `;
-            
+
             data.forEach(row => {
                 tableHtml += `
                     <tr>
@@ -218,36 +218,36 @@
                     </tr>
                 `;
             });
-            
+
             tableHtml += '</table>';
             document.getElementById('tableContainer').innerHTML = tableHtml;
 
             const monthlyAssetInterest = principal * monthlyRate;
             const monthlyDebtInterest = initialDebt * debtMonthlyRate;
             const netMonthlyInterest = monthlyAssetInterest - monthlyDebtInterest;
-            
+
             const statusHtml = `
                 <div>Monthly Asset Interest: +$${monthlyAssetInterest.toFixed(2)}</div>
                 <div>Monthly Debt Interest: -$${monthlyDebtInterest.toFixed(2)}</div>
                 <div>Net Monthly Interest: ${netMonthlyInterest >= 0 ? '+' : ''}$${netMonthlyInterest.toFixed(2)}</div>
                 <div style="margin-top: 10px;">Monthly earnings needed to break even: $${(monthlyExpenses - netMonthlyInterest).toFixed(2)}</div>
             `;
-            
+
             document.getElementById('monthsRemaining').innerHTML = statusHtml;
-            
+
             // Chart code (mostly unchanged, just adding debt line)
             const svg = document.getElementById('chart');
             const margin = {top: 20, right: 20, bottom: 30, left: 80};
             const width = svg.clientWidth - margin.left - margin.right;
             const height = 400 - margin.top - margin.bottom;
-            
+
             svg.innerHTML = '';
             svg.setAttribute('viewBox', `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`);
-            
+
             const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
             g.setAttribute('transform', `translate(${margin.left},${margin.top})`);
             svg.appendChild(g);
-            
+
             const allValues = data.flatMap(d => [d.balance, d.debt, d.netWorth]);
             const minValue = Math.min(...allValues);
             const maxValue = Math.max(...allValues);
@@ -283,7 +283,7 @@
             netWorthPath.setAttribute('d', netWorthPathD);
             netWorthPath.setAttribute('class', 'chart-line net-worth-line');
             g.appendChild(netWorthPath);
-            
+
             const xAxis = document.createElementNS("http://www.w3.org/2000/svg", "g");
             xAxis.setAttribute('transform', `translate(0,${height})`);
             for (let i = 0; i <= months; i += Math.ceil(months/10)) {
@@ -295,10 +295,10 @@
                 xAxis.appendChild(tick);
             }
             g.appendChild(xAxis);
-            
+
             const yAxis = document.createElementNS("http://www.w3.org/2000/svg", "g");
             const numYTicks = 5;
-            
+
             for (let i = 0; i <= numYTicks; i++) {
                 const value = minValue + ((maxValue - minValue) * i / numYTicks);
                 const tick = document.createElementNS("http://www.w3.org/2000/svg", "text");
@@ -311,7 +311,7 @@
             }
             g.appendChild(yAxis);
         }
-        
+
         calculate();
     </script>
 </body>
