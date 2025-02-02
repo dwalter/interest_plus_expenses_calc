@@ -175,7 +175,7 @@
                     const newDebt = Math.max(0, debt + debtInterest - monthlyDebtPayment);
                     const newNetWorth = newBalance - newDebt;
 
-                    const change = (newBalance - balance) + (newDebt - debt);
+                    const change = (newBalance - balance) - (newDebt - debt);
 
                     data.push({
                         month: i,
